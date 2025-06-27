@@ -1,56 +1,60 @@
-const pool = require('../config/db');
-const bcrypt = require('bcryptjs');
-const { v4: uuidv4 } = require('uuid');
+const pool = require("../config/db");
+const bcrypt = require("bcryptjs");
+
+/**
+ * Creates a new user
+ * @param {object} data 
+ * @returns insertId/null
+ */
+
+exports.createUser = async (data) => {
+  try {
+    data.password = await bcrypt.hash(data.password, 10);
+    let query = `INSERT INTO task_manager_users.users SET ?`;
+    const [result] = await pool.query(query, data);
+    return result.affectedRows ? result.insertId : null;
+  } catch (error) {
+    console.log("Error creating user: ", error);
+    return null;
+  }
+};
+
+/**
+ * Updates a user
+ * @param {object} data - data being updated
+ * @returns true/false
+ */
+
+exports.updateUser = async ({id, data}) => {
+  try {
+    let query = `UPDATE task_manager_users.users SET ? WHERE id = ?`;
+    const [result] = await pool.query(query, [data, id]);
+    return result.affectedRows > 0;
+  } catch (error) {
+    console.log("Error updating user: ", error);
+    return false;
+  }
+};
 
 
-async function findUserByEmail(email) {
-    const [rows] = await pool.execute('SELECT * FROM users WHERE email = ?', [email]);
-    if (rows.length === 0) return null;
-    const user = rows[0];
-    user.roles = user.roles ? user.roles.split(',') : [];
-    return user;
-}
+/**
+ * Gets user details
+ * @param {integer} id
+ * @param {string} email
+ * @param {string} mobile
+ * @returns object/null
+ */
 
-
-async function findUserById(id) {
-    const [rows] = await pool.execute('SELECT * FROM users WHERE id = ?', [id]);
-    if (rows.length === 0) return null;
-    const user = rows[0];
-    user.roles = user.roles ? user.roles.split(',') : [];
-    return user;
-}
-
-async function createUser({ username, email, password, roles }) {
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const userId = uuidv4();
-    const now = new Date();
-    const rolesString = Array.isArray(roles) ? roles.join(',') : 'team_member'; // Convert roles array to string
-
-    const [result] = await pool.execute(
-        'INSERT INTO users (id, username, email, password, roles, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?)',
-        [userId, username, email, hashedPassword, rolesString, now, now]
-    );
-
-    if (result.affectedRows === 0) {
-        throw new Error('Failed to create user');
-    }
-
-    return {
-        id: userId,
-        username,
-        email,
-        roles: rolesString.split(',') 
-    };
-}
-
-
-async function comparePassword(candidatePassword, hashedPassword) {
-    return bcrypt.compare(candidatePassword, hashedPassword);
-}
-
-module.exports = {
-    findUserByEmail,
-    findUserById,
-    createUser,
-    comparePassword
+exports.getUserDetails = async ({ id, email, mobile }) => {
+  try {
+    const [key, value] =
+      Object.entries({ id, email, mobile }).find(([_, v]) => v !== undefined) ||
+      [];
+    const query = `SELECT * FROM users WHERE status = 1 AND ${key} = ?`;
+    const [result] = await pool.query(query, [value]);
+    return result.length ? result[0] : null;
+  } catch (error) {
+    console.log("Error getting user: ", error);
+    return null;
+  }
 };
