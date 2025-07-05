@@ -2,6 +2,12 @@ const nodemailer = require('nodemailer');
 const axios = require("axios");
 const Handlebars = require('handlebars');
 
+/*
+  TemplateId:
+  2 -> Welcome + email verification template
+
+*/
+
 const {
   SMTP_HOST,
   SMTP_PORT,

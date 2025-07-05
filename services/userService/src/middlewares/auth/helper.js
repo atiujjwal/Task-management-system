@@ -40,7 +40,7 @@ exports.updateRefreshToken = async (userId, data) => {
 
 exports.getRefreshToken = async (userId) => {
     try {
-        const query = `SELECT * FROM refresh_tokens WHERE user_id = ?`; 
+        const query = `SELECT * FROM refresh_tokens WHERE user_id = ?`;
         const [result] = await pool.query(query, [userId]);
         if (!result.length) return null;
         let token = result[0];
@@ -49,7 +49,7 @@ exports.getRefreshToken = async (userId) => {
         return token.token;
     } catch (error) {
         console.log("Error getting refresh token: ", error);
-        return null;      
+        return null;
     }
 }
 
@@ -60,6 +60,27 @@ exports.invalidateRefreshToken = async (userId) => {
         return result.affectedRows > 0;
     } catch (error) {
         console.log("Error invalidating refresh token: ", error);
-        return false;     
+        return false;
     }
 }
+
+exports.generateUserVerificationToken = (id) => {
+    return {
+        email: jwt.sign(
+            {
+                id,
+                type: "email"
+            },
+            config.jwtSecret,
+            { expiresIn: config.jwtExpiresIn }
+        ),
+        mobile: jwt.sign(
+            {
+                id,
+                type: "mobile"
+            },
+            config.jwtSecret,
+            { expiresIn: config.jwtExpiresIn }
+        )
+    };
+};

@@ -35,10 +35,29 @@ const loginUserSchema = Joi.object({
   password: Joi.string().required(),
 }).xor("email", "mobile");
 
+const sentOtpSchema = Joi.object({
+  email: Joi.string().email(),
+  mobile: Joi.string(),
+}).xor("email", "mobile");
+
+const changePasswordSchema = Joi.object({
+  email: Joi.string().email(),
+  mobile: Joi.string(),
+  type: Joi.string().valid("password_reset")
+}).xor("email", "mobile");
+
 exports.validateRegisterUserData = (data) => {
   return registerUserSchema.validate(data, { abortEarly: true });
 };
 
 exports.validateLoginUserData = (data) => {
   return loginUserSchema.validate(data, { abortEarly: true });
+}
+
+exports.validateSendOtpData = (data) => {
+  return sentOtpSchema.validate(data, { abortEarly: true });
+}
+
+exports.validateChangePasswordData = (data) => {
+  return changePasswordSchema.validate(data, { abortEarly: true });
 }

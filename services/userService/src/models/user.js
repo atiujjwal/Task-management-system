@@ -7,6 +7,8 @@ const bcrypt = require("bcryptjs");
  * @returns insertId/null
  */
 
+// const cap
+
 exports.createUser = async (data) => {
   try {
     data.password = await bcrypt.hash(data.password, 10);
@@ -58,3 +60,46 @@ exports.getUserDetails = async ({ id, email, mobile }) => {
     return null;
   }
 };
+
+/**
+ * Saves user otp
+ * @param {object} data
+ * @returns insertId/null
+ */
+
+exports.saveUserOtp = async (data) => {
+  try {
+    const query = `INSERT INTO otp_logs SET ?`;
+    const [result] = await pool.query(query, data);
+    return result.length ? result[0].insertId : null;
+  } catch (error) {
+    console.log("Error saving user's OTP: ", error);
+    return null;
+  }
+};
+
+/**
+ * Gets user otp
+ * @param {string} email
+ * @param {string} mobile
+ * @returns object/null
+ */
+
+exports.getUserOtp = async ({ email, mobile, type}) => {
+  try {
+    const [key, value] =
+      Object.entries({ email, mobile }).find(([_, v]) => v !== undefined) || [];
+    const query = `SELECT * FROM otp_logs WHERE expires_at >= NOW() AND type = ? AND ${key} = ? ORDER BY created_at DESC LIMIT 1`;
+    const [result] = await pool.query(query, [type, value]);
+    return result.length ? result[0].otp : null;
+  } catch (error) {
+    console.log("Error getting user's OTP: ", error);
+    return null;
+  }
+};
+
+exports.formatName = (arr) => {
+  return arr
+    .map(str => str.charAt(0).toUpperCase() + str.slice(1))
+    .join(' ');
+}
